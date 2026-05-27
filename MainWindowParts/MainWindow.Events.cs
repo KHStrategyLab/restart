@@ -1,10 +1,12 @@
-#nullable disable
+﻿#nullable disable
 
 using KHStrategyLab.Models;
 using System.Globalization;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace KHStrategyLab
 {
@@ -13,7 +15,6 @@ namespace KHStrategyLab
         private void BtnStart_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             bool willStart = !_isHunting;
-
             if (willStart)
             {
                 // 시작 버튼을 누르는 순간 현재 입력값을 먼저 파일에 저장한다.
@@ -28,13 +29,8 @@ namespace KHStrategyLab
             _isHunting = willStart;
             ApplySettingsInputLock(_isHunting);
             BtnStart.Content = _isHunting ? "감시 중지" : "시스템 시작";
-            Log(_isHunting
-                ? $"▶ [감시] 시작 / 진입예산 {GetCurrentBudgetTextForLog()}원 / 슬롯제한 {GetCurrentMaxSlotsTextForLog()}개 / 설정 입력창 잠금"
-                : "■ [감시] 중지 / 설정 입력창 잠금 해제");
-
-            Log(_liveOrderEnabled
-                ? "[실주문상태] LiveOrderEnabled=ON / KRX=KRX 주문 / NXT가능종목=SOR 주문"
-                : "[실주문상태] LiveOrderEnabled=OFF / 신호만 발생 / 주문전송 없음");
+            Log(_isHunting ? $"▶ [감시] 시작 / 진입예산 {GetCurrentBudgetTextForLog()}원 / 슬롯제한 {GetCurrentMaxSlotsTextForLog()}개 / 설정 입력창 잠금" : "■ [감시] 중지 / 설정 입력창 잠금 해제");
+            Log(_liveOrderEnabled ? "[실주문상태] LiveOrderEnabled=ON / KRX=KRX 주문 / NXT가능종목=SOR 주문" : "[실주문상태] LiveOrderEnabled=OFF / 신호만 발생 / 주문전송 없음");
 
             if (_isHunting)
             {
@@ -60,41 +56,80 @@ namespace KHStrategyLab
         private string GetCurrentBudgetTextForLog()
         {
             string text = (InputAmount?.Text ?? "").Replace(",", "").Trim();
-            return long.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out long budget)
-                ? budget.ToString("N0")
-                : text;
+            return long.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out long budget) ? budget.ToString("N0") : text;
         }
 
         private string GetCurrentMaxSlotsTextForLog()
         {
             string text = (InputMaxSlots?.Text ?? "").Replace(",", "").Trim();
-            return int.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out int maxSlots)
-                ? maxSlots.ToString("N0")
-                : text;
+            return int.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out int maxSlots) ? maxSlots.ToString("N0") : text;
         }
 
         private void OnStockSelected(object sender, SelectionChangedEventArgs e)
         {
-            if (_isRestoringGridSelection)
-                return;
+            if (_isRestoringGridSelection) return;
 
             DataGrid grid = sender as DataGrid;
             if (grid == null) return;
 
             if (grid.SelectedItem is StockGridRow row && !string.IsNullOrWhiteSpace(row.Code))
-            {
-                ApplyChartFooterPriceColor(row.PriceColor);
-                SetManualChartRealtimeCode(row.Code);
-                RegisterVisibleScreenRowsForRealtimeTrade();
-
-                _ = Task.Run(async () =>
-                {
-                    await FetchAndDrawDailyChartAsync(row.Code, row.Name);
-                });
-            }
+                ApplySelectedStockToChart(row);
         }
 
-        private Task<bool> ShouldProtectRankNxtQuoteOnSelectionAsync(StockGridRow row)
+        private void OnStockGridPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (_isRestoringGridSelection) return;
+
+            DataGrid grid = sender as DataGrid;
+            if (grid == null) return;
+
+            if (e.OriginalSource is not DependencyObject source)
+                return;
+
+            DataGridRow clickedRow = FindVisualParent<DataGridRow>(source);
+            if (clickedRow?.Item is not StockGridRow row)
+                return;
+
+            // 이미 선택된 행을 다시 누르면 SelectionChanged가 발생하지 않는다.
+            // 이때만 직접 차트를 다시 적용한다. 새 선택은 기존 OnStockSelected가 처리한다.
+            if (!ReferenceEquals(grid.SelectedItem, row))
+                return;
+
+            if (string.IsNullOrWhiteSpace(row.Code))
+                return;
+
+            ApplySelectedStockToChart(row);
+        }
+
+        private void ApplySelectedStockToChart(StockGridRow row)
+        {
+            if (row == null || string.IsNullOrWhiteSpace(row.Code))
+                return;
+
+            ApplyChartFooterPriceColor(row.PriceColor);
+            SetManualChartRealtimeCode(row.Code);
+            RegisterVisibleScreenRowsForRealtimeTrade();
+
+            _ = Task.Run(async () =>
+            {
+                await FetchAndDrawDailyChartAsync(row.Code, row.Name);
+            });
+        }
+
+        private static T FindVisualParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            while (child != null)
+            {
+                if (child is T parent)
+                    return parent;
+
+                child = VisualTreeHelper.GetParent(child);
+            }
+
+            return null;
+        }
+
+        private Task ShouldProtectRankNxtQuoteOnSelectionAsync(StockGridRow row)
         {
             // Thin 기준에서는 TOP20 NXT/0B 표시값 보호를 사용하지 않는다.
             return Task.FromResult(false);
