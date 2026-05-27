@@ -41,9 +41,9 @@ namespace KHStrategyLab
 
                     _leadingMaSignalGridColumnsInitialized = true;
                     AddLeadingSignalColumnIfMissing("기준봉", "BaseCandleGradeText", "BaseCandleGradeBrush", 68);
-                    AddLeadingTextColumnIfMissing("10분5", "Ma5Text", 72);
-                    AddLeadingTextColumnIfMissing("10분20", "Ma20Text", 72);
-                    AddLeadingTextColumnIfMissing("10분60", "Ma60Text", 72);
+                    // AddLeadingTextColumnIfMissing("10분5", "Ma5Text", 72);
+                    // AddLeadingTextColumnIfMissing("10분20", "Ma20Text", 72);
+                    // AddLeadingTextColumnIfMissing("10분60", "Ma60Text", 72);
                     AddLeadingSignalColumnIfMissing("신호", "MaSignalText", "MaSignalBrush", 92);
                 }
 
