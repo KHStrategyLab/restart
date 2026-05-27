@@ -47,7 +47,7 @@ namespace KHStrategyLab
             if (string.IsNullOrWhiteSpace(_token))
                 return;
 
-            List<(string Code, string Market)> targets = [];
+            List<string> targets = [];
 
             try
             {
@@ -58,19 +58,13 @@ namespace KHStrategyLab
                     targets = _search00List
                         .Where(row => row != null)
                         .Where(row => IsStrategyCandidateStockInfoRefreshNeeded(row))
-                        .Select(row =>
-                        {
-                            string code = NormalizeStockCode(row.Code);
-                            string market = ResolveStrategyCandidatePreferredMarket(code, row.VolumeText);
-                            return (Code: code, Market: market);
-                        })
-                        .Where(x => !string.IsNullOrWhiteSpace(x.Code))
-                        .GroupBy(x => x.Code)
-                        .Select(g => g.First())
-                        .Take(12)
+                        .Select(row => NormalizeStockCode(row.Code))
+                        .Where(code => !string.IsNullOrWhiteSpace(code))
+                        .Distinct()
+                        .Take(25)
                         .ToList();
 
-                    foreach ((string code, _) in targets)
+                    foreach (string code in targets)
                     {
                         HoldingStock row = _search00List.FirstOrDefault(x => NormalizeStockCode(x.Code) == code);
                         if (row != null && IsPlaceholderTradingValueText(row.TradingValueText))
@@ -84,13 +78,15 @@ namespace KHStrategyLab
                 if ((DateTime.Now - _lastStrategyCandidateStockInfoAutoRefreshLogAt).TotalSeconds >= 30)
                 {
                     _lastStrategyCandidateStockInfoAutoRefreshLogAt = DateTime.Now;
-                    Log($"ℹ️ [추적종목 종목정보] 거래대금/회전율 자동조회 {targets.Count}개 / {reason}");
+                    Log($"ℹ️ [추적종목 종목정보] KRX 일거래대금/회전율 자동조회 {targets.Count}개 / {reason}");
                 }
 
-                foreach ((string code, string market) in targets)
+                foreach (string code in targets)
                 {
-                    await RefreshStockInfoAsync(code, market);
-                    await Task.Delay(350);
+                    // 추적리스트의 거래대금은 전략시장(NXT/KRX) 실시간 거래대금이 아니라
+                    // 후보 비교용 KRX 일거래대금으로 고정한다.
+                    await RefreshStockInfoAsync(code, "KRX");
+                    await Task.Delay(250);
                 }
             }
             catch (Exception ex)
@@ -142,29 +138,6 @@ namespace KHStrategyLab
                 return true;
 
             return false;
-        }
-
-        private string ResolveStrategyCandidatePreferredMarket(string code, string volumeText)
-        {
-            code = NormalizeStockCode(code);
-
-            if (!string.IsNullOrWhiteSpace(code) &&
-                _watchCandidates.TryGetValue(code, out WatchCandidate candidate) &&
-                !string.IsNullOrWhiteSpace(candidate.StrategyMarket))
-            {
-                string market = candidate.StrategyMarket.Trim().ToUpperInvariant();
-                if (market == "NXT" || market == "KRX")
-                    return market;
-            }
-
-            string text = (volumeText ?? "").ToUpperInvariant();
-            if (text.Contains("/NXT") || text.Contains("NXT"))
-                return "NXT";
-
-            if (text.Contains("/KRX") || text.Contains("KRX"))
-                return "KRX";
-
-            return "";
         }
     }
 }

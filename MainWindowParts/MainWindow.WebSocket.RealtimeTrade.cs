@@ -709,17 +709,67 @@ namespace KHStrategyLab
             string tradeTimeText = ReadRealtimeValue(item, values, "cntr_tm", "trade_time", "체결시간", "20");
             changeRateText = NormalizeRealtimeRateText(changeRateText);
 
+            long volume = ParseLongSafe(volumeText);
+            long tradingValueRaw = ParseLongSafe(tradingValueText);
+
             return new RealtimeTradeSnapshot
             {
                 Code = code,
                 IsNxtSnapshot = isNxtSnapshot,
                 CurrentPrice = currentPrice,
-                Volume = ParseLongSafe(volumeText),
+                Volume = volume,
                 TradeQuantity = ParseLongSafe(tradeQuantityText),
-                TradingValue = ParseLongSafe(tradingValueText),
+                TradingValue = NormalizeRealtimeTradingValue(tradingValueRaw, currentPrice, volume),
                 TradeTime = ParseRealtimeTradeTime(tradeTimeText),
                 ChangeRateText = changeRateText
             };
+        }
+
+        private long NormalizeRealtimeTradingValue(long rawTradingValue, long currentPrice, long volume)
+        {
+            if (rawTradingValue <= 0)
+                return 0;
+
+            if (currentPrice <= 0 || volume <= 0)
+                return rawTradingValue;
+
+            decimal expectedWon = (decimal)currentPrice * volume;
+            if (expectedWon <= 0)
+                return rawTradingValue;
+
+            decimal rawWon = rawTradingValue;
+            decimal rawMillionWon = rawWon * 1_000_000m;
+
+            // 키움 0B 14번 누적거래대금은 장중 실시간에서 백만원 단위로 내려오는 경우가 많다.
+            // 예: 현재가 27,200원 × 누적거래량 6,625,692주 ≒ 1,802억원
+            //     0B 14번 값 183,266 → 183,266백만원 ≒ 1,832억원
+            // raw 값이 현재가×거래량 대비 너무 작고, 백만원 보정값이 더 자연스러우면 원 단위로 보정한다.
+            decimal rawRatio = rawWon / expectedWon;
+            decimal millionRatio = rawMillionWon / expectedWon;
+
+            if (rawRatio >= 0.1m && rawRatio <= 10m)
+                return SafeDecimalToLong(rawWon);
+
+            if (millionRatio >= 0.1m && millionRatio <= 10m)
+                return SafeDecimalToLong(rawMillionWon);
+
+            // 그래도 판단이 애매하면, 거래대금 표시가 지나치게 작아지는 것을 막기 위해
+            // 현재가×거래량보다 100분의 1 이하인 값은 백만원 단위로 본다.
+            if (rawWon < expectedWon / 100m)
+                return SafeDecimalToLong(rawMillionWon);
+
+            return SafeDecimalToLong(rawWon);
+        }
+
+        private long SafeDecimalToLong(decimal value)
+        {
+            if (value <= 0)
+                return 0;
+
+            if (value >= long.MaxValue)
+                return long.MaxValue;
+
+            return (long)Math.Round(value, MidpointRounding.AwayFromZero);
         }
 
         private DateTime ParseRealtimeTradeTime(string value)
@@ -834,7 +884,10 @@ namespace KHStrategyLab
             HoldingStock searchStock = _search00List.FirstOrDefault(x => NormalizeStockCode(x.Code) == code);
             if (searchStock != null)
             {
-                ApplyRealtimeTradeSnapshotToRow(searchStock, snapshot, keepVolumeText: false, keepProfitRateText: false, keepTradingValueText: true);
+                // 추적리스트 거래대금은 장중 KRX 0B 누적거래대금으로 실시간 갱신한다.
+                // 단, NXT/SOR 오버레이 값이 KRX 일거래대금을 덮으면 클릭 전후 금액 편차가 생기므로
+                // NXT 스냅샷일 때는 거래대금 칸을 유지한다.
+                ApplyRealtimeTradeSnapshotToRow(searchStock, snapshot, keepVolumeText: false, keepProfitRateText: false, keepTradingValueText: snapshot.IsNxtSnapshot);
                 applied = true;
             }
 
