@@ -1,4 +1,5 @@
-#nullable disable
+﻿#nullable disable
+
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -28,9 +29,7 @@ namespace KHStrategyLab
             _kiwoomRealtimeRankTimer.Tick += async (s, e) =>
             {
                 await RefreshKiwoomRealtimeTop20Async();
-
-                if (IsMarketClosedDate(DateTime.Now.Date))
-                    return;
+                if (IsMarketClosedDate(DateTime.Now.Date)) return;
             };
             _kiwoomRealtimeRankTimer.Start();
 
@@ -57,15 +56,21 @@ namespace KHStrategyLab
             // 조건00 기준봉 OHLC 저장은 후보 편입 때 하지 않는다.
             // 장마감 후 일봉이 완성된 뒤 1회만 저장해서 이후 전략 계산에 사용한다.
             InitializeStrategyCandidateBaseCandleSnapshotTimer();
+
             TryInitializeOptionalTimer("InitializeBaseCandleScoreTimer");
 
             // 추적중인 매수후보 10분봉 MA5/20/60 신호등 표시 엔진.
             // 파일이 없으면 조용히 넘어가므로 빌드 의존성이 생기지 않는다.
             TryInitializeOptionalTimer("InitializeLeadingMaSignalEngine");
 
+            // 추적리스트 거래대금/등락률/회전율 자동 보정.
+            // 시작 직후 복원된 후보가 "조회중" 상태로 남지 않도록 종목정보를 천천히 채운다.
+            TryInitializeOptionalTimer("InitializeStrategyCandidateStockInfoAutoRefreshTimer");
+
             // 조건00 매수신호 점검 파일이 적용되어 있으면 자동 연결한다.
             // 파일이 아직 없으면 조용히 넘어가므로 빌드 의존성이 생기지 않는다.
             TryInitializeOptionalTimer("InitializeStrategyCandidateBuySignalCheckTimer");
+
             TryInitializeOptionalTimer("InitializePrevLimitBodyOpenRecoveryTimer");
             TryInitializeOptionalTimer("InitializeLivePositionExitTimer");
 
@@ -76,9 +81,7 @@ namespace KHStrategyLab
 
         private void LogMarketHolidayAutoRefreshPausedOnce()
         {
-            if (_marketHolidayAutoRefreshNoticeLogged)
-                return;
-
+            if (_marketHolidayAutoRefreshNoticeLogged) return;
             _marketHolidayAutoRefreshNoticeLogged = true;
             string reason = GetMarketClosedReason(DateTime.Now.Date);
             Log($"⏸ [휴장일] 0B 주기등록 보류: {DateTime.Now:yyyy-MM-dd} {reason}");

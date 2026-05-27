@@ -1,4 +1,4 @@
-#nullable disable
+﻿#nullable disable
 using KHStrategyLab.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -113,7 +113,7 @@ namespace KHStrategyLab
                         Name = name,
                         CurrentPrice = candidate.LastPrice,
                         VolumeText = $"조건00추적/{marketText}",
-                        TradingValueText = $"T+{GetStrategyCandidateTrackingDay(candidate, now)} / 6거래일보관",
+                        TradingValueText = "조회중",
                         TurnoverRateText = ResolveStrategyCandidateTurnoverText(candidate)
                     });
                 }

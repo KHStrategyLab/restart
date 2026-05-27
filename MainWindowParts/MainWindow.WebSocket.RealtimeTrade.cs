@@ -1,4 +1,4 @@
-#nullable disable
+﻿#nullable disable
 
 using KHStrategyLab.Models;
 using Newtonsoft.Json;
@@ -834,7 +834,7 @@ namespace KHStrategyLab
             HoldingStock searchStock = _search00List.FirstOrDefault(x => NormalizeStockCode(x.Code) == code);
             if (searchStock != null)
             {
-                ApplyRealtimeTradeSnapshotToRow(searchStock, snapshot, keepVolumeText: false, keepProfitRateText: false);
+                ApplyRealtimeTradeSnapshotToRow(searchStock, snapshot, keepVolumeText: false, keepProfitRateText: false, keepTradingValueText: true);
                 applied = true;
             }
 
@@ -851,7 +851,7 @@ namespace KHStrategyLab
 
             // 보유종목은 kt00005 초기값을 기준으로 두되, 0B 현재가가 들어오면
             // 보유수량 × 현재가로 평가금액/손익률/총잔고를 실시간 재계산한다.
-            ApplyRealtimeTradeSnapshotToRow(balanceStock, snapshot, keepVolumeText: true, keepProfitRateText: true);
+            ApplyRealtimeTradeSnapshotToRow(balanceStock, snapshot, keepVolumeText: true, keepProfitRateText: true, keepTradingValueText: true);
             AccountApplyRealtimeBalancePrice(balanceStock, snapshot.CurrentPrice, snapshot.IsNxtSnapshot);
             return true;
         }
@@ -878,7 +878,7 @@ namespace KHStrategyLab
             }
         }
 
-        private void ApplyRealtimeTradeSnapshotToRow(StockGridRow row, RealtimeTradeSnapshot snapshot, bool keepVolumeText, bool keepProfitRateText)
+        private void ApplyRealtimeTradeSnapshotToRow(StockGridRow row, RealtimeTradeSnapshot snapshot, bool keepVolumeText, bool keepProfitRateText, bool keepTradingValueText = false)
         {
             if (row == null || snapshot == null) return;
 
@@ -888,7 +888,7 @@ namespace KHStrategyLab
             if (!keepVolumeText && snapshot.Volume > 0)
                 row.VolumeText = snapshot.Volume.ToString("N0");
 
-            if (snapshot.TradingValue > 0)
+            if (!keepTradingValueText && snapshot.TradingValue > 0)
                 row.TradingValueText = FormatKoreanMoney(snapshot.TradingValue);
 
             if (!string.IsNullOrWhiteSpace(snapshot.ChangeRateText))
