@@ -1,4 +1,4 @@
-#nullable disable
+﻿#nullable disable
 using KHStrategyLab.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -68,7 +68,10 @@ namespace KHStrategyLab
             {
                 BaseCandleScoreDayResult result = BuildBaseCandleScoreDayResult(baseDate, candidates, now, reason);
                 SaveBaseCandleScoreDayResult(result);
-                RunBaseCandleFollowupScoreIfDue(now, reason);
+                // D1 점수는 제거한다.
+                // 기준봉 당일(D0) 품질만 저장/표시하고, 기준봉 이후 흐름은 종목 간 상대점수가 아니라
+                // 각 종목 자신의 기준봉 몸통/허리/저가/고가 안에서 상태값으로 해석한다.
+                // RunBaseCandleFollowupScoreIfDue(now, reason);
                 ApplyBaseCandleScoreToLeadingGrid();
                 _lastBaseCandleScoreRunKey = runKey;
 
@@ -161,57 +164,10 @@ namespace KHStrategyLab
 
         private void RunBaseCandleFollowupScoreIfDue(DateTime now, string reason)
         {
-            List<string> baseDates = [.. _watchCandidates.Values
-                .Where(x => x != null)
-                .Select(x => NormalizeChartDate(x.BaseCandleDate))
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(x => x)];
-
-            if (baseDates.Count == 0) return;
-
-            DateTime latestOpen = ResolveLatestMarketOpenDateOnOrBefore(now.Date);
-            string latestOpenText = latestOpen.ToString("yyyyMMdd");
-
-            foreach (string baseDate in baseDates)
-            {
-                if (string.Compare(baseDate, latestOpenText, StringComparison.OrdinalIgnoreCase) >= 0)
-                    continue;
-
-                List<WatchCandidate> candidates = [.. _watchCandidates.Values
-                    .Where(x => x != null)
-                    .Select(x => NormalizeStrategyCandidate(x, now))
-                    .Where(x => x != null)
-                    .Where(x => string.Equals(NormalizeChartDate(x.BaseCandleDate), baseDate, StringComparison.OrdinalIgnoreCase))
-                    .GroupBy(x => NormalizeStockCode(x.Code))
-                    .Select(g => g.OrderByDescending(x => x.LastSeen).First())];
-
-                if (candidates.Count == 0) continue;
-
-                string runKey = BuildBaseCandleFollowupRunKey(baseDate, candidates);
-                if (string.Equals(_lastBaseCandleFollowupRunKey, runKey, StringComparison.OrdinalIgnoreCase))
-                    continue;
-                if (HasBaseCandleFollowupDate(baseDate))
-                    continue;
-
-                BaseCandleFollowupDayResult result = BuildBaseCandleFollowupDayResult(baseDate, candidates, now, reason);
-                if (result.ReadyCount <= 0)
-                    continue;
-
-                SaveBaseCandleFollowupDayResult(result);
-                _lastBaseCandleFollowupRunKey = runKey;
-
-                Log($"🧮 [기준봉점수] D1 평가 완료: 기준일={baseDate} / 준비 {result.ReadyCount}개 / 보류 {result.PendingCount}개 / 사유={reason}");
-                foreach (BaseCandleFollowupScoreItem item in result.Candidates
-                    .Where(x => string.Equals(x.Status, "READY", StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(x => x.FinalRank)
-                    .ThenByDescending(x => x.RawScore)
-                    .Take(5))
-                {
-                    string gradeText = BuildBaseCandleScoreGradeRankText(item.Grade, item.FinalRank);
-                    Log($"🏅 [기준봉점수] D1 {item.Name}({item.Code}) / {item.RawScore}/{item.MaxRawScore}점({item.ScorePercent:0.##}%) / {gradeText} / {item.Summary}");
-                }
-            }
+            // D1 점수 제거 완료.
+            // 이 함수는 남겨두되 아무 작업도 하지 않게 막아둔다.
+            // 혹시 다른 위치에서 호출되더라도 FollowupD1 저장/로그/일봉조회가 실행되지 않는다.
+            return;
         }
 
         private string BuildBaseCandleFollowupRunKey(string baseDate, List<WatchCandidate> candidates)
@@ -804,7 +760,6 @@ namespace KHStrategyLab
 
                 JObject day = dates[baseDate] as JObject;
                 JObject itemD0 = FindBaseCandleScoreItem(day?["Candidates"] as JArray, code);
-                JObject itemD1 = FindBaseCandleScoreItem(day?["FollowupD1"]?["Candidates"] as JArray, code);
 
                 if (itemD0 == null || !string.Equals(itemD0["Status"]?.ToString(), "READY", StringComparison.OrdinalIgnoreCase))
                     return false;
@@ -815,15 +770,8 @@ namespace KHStrategyLab
                 string text = BuildBaseCandleScoreGradeRankText(gradeD0, rankD0);
                 Brush brush = scorePercentD0 >= 70 ? Brushes.LimeGreen : Brushes.Gold;
 
-                if (itemD1 != null && string.Equals(itemD1["Status"]?.ToString(), "READY", StringComparison.OrdinalIgnoreCase))
-                {
-                    double scorePercentD1 = ReadBaseCandleScoreDouble(itemD1["ScorePercent"]);
-                    int rankD1 = ReadBaseCandleScoreInt(itemD1["FinalRank"]);
-                    string gradeD1 = ResolveBaseCandleScoreGrade(scorePercentD1);
-                    string d1Text = BuildBaseCandleScoreGradeRankText(gradeD1, rankD1);
-                    text = MergeBaseCandleGradeText(text, d1Text);
-                }
-
+                // 기존 base_candle_scores.json 안에 FollowupD1이 남아 있어도 화면에는 반영하지 않는다.
+                // 화면 등급은 D0 기준 A1/B2 형태만 표시한다.
                 score = new BaseCandleGridScore
                 {
                     Text = text,
