@@ -1,0 +1,77 @@
+// =====================================================
+// Step 1 연결 예시 - 그대로 붙여넣기보다 현재 MainWindow 구조에 맞춰 병합하세요.
+// 실주문 금지. 로그 출력만.
+// =====================================================
+
+using System;
+using System.Collections.Generic;
+using KHStrategyLab.Strategies.Core;
+using KHStrategyLab.Strategies.Models;
+
+// MainWindow 필드 예시
+private NumericMachine _numericMachine = new NumericMachine(baseTimeframeMinutes: 3, keepClosedBars: 300);
+private StrategyRegistry _strategyRegistry = new StrategyRegistry();
+private TradeGuard _tradeGuard = new TradeGuard();
+private StrategyHub _strategyHub;
+
+private readonly Dictionary<string, ScenarioState> _scenarioStates = new Dictionary<string, ScenarioState>();
+private readonly Dictionary<string, CandidateProfile> _candidateMap = new Dictionary<string, CandidateProfile>();
+
+private void InitStep1StrategyEngine()
+{
+    _strategyHub = new StrategyHub(_strategyRegistry, _tradeGuard);
+
+    foreach (var strategy in _strategyRegistry.ListUp())
+    {
+        // 기존 Logger 함수명에 맞게 바꿔도 됨
+        // Logger($"[전략등록] {strategy.StrategyCode} / {strategy.StrategyName} / {strategy.MarketRoute}");
+        System.Diagnostics.Debug.WriteLine($"[전략등록] {strategy.StrategyCode} / {strategy.StrategyName} / {strategy.MarketRoute}");
+    }
+}
+
+// WebSocket 0B 또는 기존 실시간 현재가 수신부에서 호출
+private void OnKiwoomReal0B(string stockCode, IDictionary<string, string> values)
+{
+    var tick = QuoteTick.FromKiwoom0B(stockCode, values, DateTime.Now);
+    var update = _numericMachine.Update(tick);
+
+    CandidateProfile candidate;
+    if (!_candidateMap.TryGetValue(stockCode, out candidate))
+        return;
+
+    ScenarioState state;
+    if (!_scenarioStates.TryGetValue(stockCode, out state))
+    {
+        state = new ScenarioState
+        {
+            StockCode = stockCode,
+            StrategyCode = candidate.StrategyCode,
+            SearchMatched = true
+        };
+        _scenarioStates[stockCode] = state;
+    }
+
+    var context = new StrategyContext
+    {
+        Candidate = candidate,
+        LatestTick = tick,
+        NumericUpdate = update,
+        State = state,
+        Madi = new MadiState(),
+        IsMarketOpen = true
+    };
+
+    var signals = _strategyHub.Evaluate(context);
+    foreach (var signal in signals)
+    {
+        var msg = $"[전략신호] {signal.StrategyCode} / {signal.StockName}({signal.StockCode}) / {signal.Side} / {signal.Price} / {signal.Reason}";
+
+        if (signal.Blocked)
+            msg += " / 차단:" + signal.BlockReason;
+
+        // 실주문 금지. 여기서는 로그만.
+        System.Diagnostics.Debug.WriteLine(msg);
+        // Logger(msg);
+        // TelegramSend(msg);
+    }
+}

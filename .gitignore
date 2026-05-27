@@ -1,0 +1,86 @@
+# =========================
+# Visual Studio
+# =========================
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# =========================
+# Build outputs
+# =========================
+bin/
+obj/
+Debug/
+Release/
+x64/
+x86/
+[Bb]in/
+[Oo]bj/
+
+# =========================
+# NuGet / packages
+# =========================
+packages/
+*.nupkg
+
+# =========================
+# Local secrets / config
+# =========================
+config.json
+appsettings.json
+appsettings.*.json
+*.local.json
+.env
+.env.*
+
+# 공개용 샘플 설정 파일은 올려도 됨
+!config.example.json
+
+# =========================
+# Runtime logs / API raw data
+# =========================
+Logs/
+logs/
+RawLogs/
+rawlogs/
+Data/
+data/
+Storage/
+storage/
+
+*.log
+*.db
+*.sqlite
+*.sqlite3
+
+# =========================
+# Windows / Explorer
+# =========================
+desktop.ini
+Thumbs.db
+ehthumbs.db
+.DS_Store
+
+# =========================
+# Temporary files
+# =========================
+*.tmp
+*.temp
+*.bak
+*.old
+*.orig
+
+# =========================
+# Rider / JetBrains optional
+# =========================
+.idea/
+
+# =========================
+# Test / coverage optional
+# =========================
+TestResults/
+coverage/
+*.coverage
+*.coveragexml

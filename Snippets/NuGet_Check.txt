@@ -1,0 +1,16 @@
+KHStrategyLab NuGet 권장 상태
+
+이미 설치된 것 기준으로 사용 가능:
+- Newtonsoft.Json
+- System.Text.Json
+- Websocket.Client
+- Hardcodet.NotifyIcon.Wpf
+- Microsoft.Data.Sqlite
+- ClosedXML
+- CommunityToolkit.Mvvm
+- Serilog.Sinks.File
+
+추가 확인:
+- Serilog 본체도 설치되어 있으면 나중에 Serilog.Sinks.File 사용이 편함.
+
+현재 Starter Pack 코드는 Serilog 본체 없이도 컴파일되도록 AppLogger 직접 파일 로그 방식으로 구성함.

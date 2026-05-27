@@ -1,0 +1,41 @@
+MainWindow.xaml.cs 연결 예시
+
+using KHStrategyLab.Services;
+using KHStrategyLab.Strategies;
+
+private readonly AppLogger _logger = new();
+private readonly JsonFileStore _jsonStore = new();
+private CandidateStore _candidateStore;
+private StrategyRunner _strategyRunner;
+
+private void InitKHStrategyLab()
+{
+    AppFolders.EnsureAll();
+
+    _candidateStore = new CandidateStore(_jsonStore);
+    _strategyRunner = new StrategyRunner(_logger);
+
+    _strategyRunner.Add(new NxtTenMinuteRecoverStrategy { IsEnabled = true });
+    _strategyRunner.Add(new KrxPullbackBreakStrategy { IsEnabled = false });
+    _strategyRunner.Add(new AccumulationCandleBreakStrategy { IsEnabled = false });
+
+    _logger.Info("KHStrategyLab 초기화 완료");
+}
+
+전략 평가 예시
+
+var context = new StrategyContext
+{
+    Candidate = candidate,
+    TenMinuteCandles = tenMinuteCandles,
+    FiveMinuteCandles = fiveMinuteCandles,
+    DailyCandles = dailyCandles,
+    Position = position,
+    Now = DateTime.Now
+};
+
+var signals = _strategyRunner.EvaluateAll(context);
+foreach (var signal in signals)
+{
+    // Grid에 표시하거나 텔레그램 알림 후 승인 대기
+}

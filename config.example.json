@@ -1,0 +1,10 @@
+{
+  "AppKey": "",
+  "SecretKey": "",
+  "TelegramToken": "",
+  "TelegramChatId": "",
+  "ConditionSeq00": "0",
+  "Budget": "100000",
+  "MaxSlots": "3",
+  "AutoBuy": false
+}

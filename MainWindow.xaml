@@ -1,0 +1,427 @@
+﻿<Window x:Class="KHStrategyLab.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="KHStrategyLab - Strategy 00 / Realtime Rank"
+        Height="1000" Width="1800"
+        Background="#303030" Foreground="#E5E7EB"
+        WindowStartupLocation="CenterScreen" WindowState="Maximized">
+
+    <Window.Resources>
+        <!-- 테마 색상 정의 -->
+        <SolidColorBrush x:Key="BrandUp" Color="#e9256f"/>
+        <SolidColorBrush x:Key="BrandDown" Color="#428ace"/>
+        <SolidColorBrush x:Key="Highlight" Color="#d2cb50"/>
+        <SolidColorBrush x:Key="Highlight2" Color="#bb8af2"/>
+        <SolidColorBrush x:Key="PanelBg" Color="#262626"/>
+        <SolidColorBrush x:Key="BorderColor" Color="#444444"/>
+        <SolidColorBrush x:Key="SoftRed" Color="#F87171"/>
+        <SolidColorBrush x:Key="BlueGrey" Color="#94A3B8"/>
+
+        <!-- 섹션 헤더 스타일 -->
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Margin" Value="5,5,0,10"/>
+        </Style>
+
+        <!-- 모던 데이터 그리드 스타일 -->
+        <Style x:Key="ModernGrid" TargetType="DataGrid">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="RowBackground" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#F3F4F6"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#333333"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="RowHeight" Value="38"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="SelectionUnit" Value="FullRow"/>
+            <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="RowHeaderWidth" Value="0"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden"/>
+            <Style.Resources>
+                <Style TargetType="DataGridCell">
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Padding" Value="0"/>
+                    <Setter Property="VerticalContentAlignment" Value="Center"/>
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Foreground" Value="White"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+                <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="Background" Value="#3a3e4a"/>
+                    <Setter Property="Foreground" Value="#9CA3AF"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                    <Setter Property="FontSize" Value="14"/>
+                    <Setter Property="Padding" Value="10,8"/>
+                </Style>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="#3F3F3F"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="#475569"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Style.Resources>
+        </Style>
+
+        <Style x:Key="GridCellTextLeft" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="TextAlignment" Value="Left"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="Margin" Value="0"/>
+        </Style>
+
+        <Style x:Key="GridCellTextRight" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="TextAlignment" Value="Right"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="Margin" Value="0"/>
+        </Style>
+
+        <Style x:Key="GridCellTextCenter" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="Margin" Value="0"/>
+        </Style>
+
+        <Style x:Key="BezellessInput" TargetType="TextBox">
+            <Setter Property="Background" Value="#1A1A1A"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="TextAlignment" Value="Right"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="110"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 상단 대시보드 -->
+        <UniformGrid Grid.Row="0" Columns="7">
+            <Border Background="{StaticResource PanelBg}" Margin="5" CornerRadius="4" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" Cursor="Hand" ToolTip="KOSPI 일봉차트 보기" MouseLeftButtonUp="KospiPanel_MouseLeftButtonUp">
+                <StackPanel VerticalAlignment="Center" Margin="15,0">
+                    <TextBlock Text="KOSPI" Foreground="#9CA3AF" FontSize="12"/>
+                    <TextBlock x:Name="TxtKospi" Text="---" Foreground="{StaticResource BrandUp}" FontSize="24" FontWeight="Bold"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="TxtKospiDiff" Text="0.00" FontSize="13" Foreground="{StaticResource BrandUp}" Margin="0,0,5,0"/>
+                        <TextBlock x:Name="TxtKospiRate" Text="0.00%" FontSize="13" Foreground="{StaticResource BrandUp}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            <Border Background="{StaticResource PanelBg}" Margin="5" CornerRadius="4" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" Cursor="Hand" ToolTip="KOSDAQ 일봉차트 보기" MouseLeftButtonUp="KosdaqPanel_MouseLeftButtonUp">
+                <StackPanel VerticalAlignment="Center" Margin="15,0">
+                    <TextBlock Text="KOSDAQ" Foreground="#9CA3AF" FontSize="12"/>
+                    <TextBlock x:Name="TxtKosdaq" Text="---" Foreground="{StaticResource BrandDown}" FontSize="24" FontWeight="Bold"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="TxtKosdaqDiff" Text="0.00" FontSize="13" Foreground="{StaticResource BrandDown}" Margin="0,0,5,0"/>
+                        <TextBlock x:Name="TxtKosdaqRate" Text="0.00%" FontSize="13" Foreground="{StaticResource BrandDown}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            <Border Background="{StaticResource PanelBg}" Margin="5" CornerRadius="4" BorderBrush="{StaticResource BorderColor}" BorderThickness="1">
+                <StackPanel VerticalAlignment="Center" Margin="15,0">
+                    <TextBlock Text="총 자산 평가액" Foreground="#9CA3AF" FontSize="12"/>
+                    <TextBlock x:Name="TxtTotalAsset" Text="₩ 0" Foreground="#F3F4F6" FontSize="22" FontWeight="Bold"/>
+                    <TextBlock x:Name="TxtTotalBuy" Text="매입 ₩ 0" FontSize="12" Foreground="#9CA3AF"/>
+                </StackPanel>
+            </Border>
+            <Border Background="{StaticResource PanelBg}" Margin="5" CornerRadius="4" BorderBrush="{StaticResource BorderColor}" BorderThickness="1">
+                <StackPanel VerticalAlignment="Center" Margin="15,0">
+                    <TextBlock Text="실시간 수익률" Foreground="#9CA3AF" FontSize="12"/>
+                    <TextBlock x:Name="TxtProfitRate" Text="0.00%" Foreground="#34D399" FontSize="24" FontWeight="Bold"/>
+                    <TextBlock x:Name="TxtProfitAmt" Text="+₩ 0" FontSize="13" Foreground="#9CA3AF"/>
+                </StackPanel>
+            </Border>
+            <Border Background="{StaticResource PanelBg}" Margin="5" CornerRadius="4" BorderBrush="{StaticResource BorderColor}" BorderThickness="1">
+                <StackPanel VerticalAlignment="Center" Margin="15,0">
+                    <TextBlock Text="실현손익" Foreground="#9CA3AF" FontSize="12"/>
+                    <TextBlock x:Name="TxtRealizedProfit" Text="0" Foreground="#F3F4F6" FontSize="22" FontWeight="Bold"/>
+                    <TextBlock x:Name="TxtEstimatedAsset" Text="추정자산 \ 0" FontSize="12" Foreground="#9CA3AF"/>
+                </StackPanel>
+            </Border>
+            <Border Background="{StaticResource PanelBg}" Margin="5" CornerRadius="4" BorderBrush="{StaticResource BorderColor}" BorderThickness="1">
+                <StackPanel VerticalAlignment="Center" Margin="15,0">
+                    <TextBlock Text="운용 슬롯" Foreground="#9CA3AF" FontSize="12"/>
+                    <TextBlock x:Name="TxtSlots" Text="0 / 3" Foreground="{StaticResource Highlight}" FontSize="24" FontWeight="Bold"/>
+                    <TextBlock x:Name="TxtAccountDisplay" Text="조회 대기" FontSize="13" Foreground="{StaticResource Highlight}"/>
+                </StackPanel>
+            </Border>
+            <Border Background="{StaticResource PanelBg}" Margin="5" CornerRadius="4" BorderBrush="{StaticResource BorderColor}" BorderThickness="1">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock x:Name="TxtStatus" Text="서버 대기 중" Foreground="{StaticResource Highlight2}" FontSize="16" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <Button x:Name="BtnStart" Content="시스템 시작" Width="120" Height="36" Click="BtnStart_Click" Background="{StaticResource BrandUp}" Foreground="White" BorderThickness="0" FontWeight="Bold" FontSize="14" Cursor="Hand"/>
+                </StackPanel>
+            </Border>
+        </UniformGrid>
+
+        <Grid Grid.Row="1" Margin="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="900"/>
+                <ColumnDefinition Width="*"/>
+                <!-- 오른쪽 TOP20 패널 폭 확대: 순위 컬럼 추가 후 종목명 잘림 방지 -->
+                <ColumnDefinition Width="400"/>
+            </Grid.ColumnDefinitions>
+
+            <Grid Grid.Column="0" Margin="0,0,10,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="420"/>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="4" Padding="15" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="⚙️ 설정 (예산/슬롯수)" Style="{StaticResource SectionHeader}" Margin="0,0,0,15"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="진입예산:" Foreground="#9CA3AF" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBox x:Name="InputAmount" Grid.Column="1" Style="{StaticResource BezellessInput}" Text="300000" PreviewTextInput="NumberOnly_PreviewTextInput" InputMethod.IsInputMethodEnabled="False"/>
+                            <TextBlock Text="슬롯제한:" Grid.Column="2" Foreground="#9CA3AF" FontSize="14" VerticalAlignment="Center" Margin="20,0,10,0"/>
+                            <TextBox x:Name="InputMaxSlots" Grid.Column="3" Style="{StaticResource BezellessInput}" Text="3" PreviewTextInput="NumberOnly_PreviewTextInput" InputMethod.IsInputMethodEnabled="False"/>
+                        </Grid>
+                        <CheckBox x:Name="ChkAutoBuy" Content="실시간 자동 매매 적용" Foreground="{StaticResource BrandUp}" FontSize="14" FontWeight="Bold" Margin="0,15,0,0" IsChecked="False"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="1" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,10">
+                    <DockPanel>
+                        <TextBlock x:Name="TxtStrategy00Title" Text="💎 주도주 실시간 탐색 (전략 00)" Style="{StaticResource SectionHeader}" DockPanel.Dock="Top"/>
+                        <DataGrid x:Name="GridLeading" Style="{StaticResource ModernGrid}" AutoGenerateColumns="False" SelectionChanged="OnStockSelected">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="종목명" Binding="{Binding Name}" Width="*">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextLeft}">
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="현재가" Binding="{Binding CurrentPrice, StringFormat={}{0:N0}}" Width="80">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextRight}">
+                                            <Setter Property="Foreground" Value="{Binding PriceColor}"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="거래량" Binding="{Binding VolumeText}" Width="85">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextRight}">
+                                            <Setter Property="Foreground" Value="{StaticResource BlueGrey}"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="거래대금" Binding="{Binding TradingValueText}" Width="85">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextRight}">
+                                            <Setter Property="Foreground" Value="{StaticResource BlueGrey}"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="등락률" Binding="{Binding ChangeRateText}" Width="65">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextRight}">
+                                            <Setter Property="Foreground" Value="{Binding ProfitColor}"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="회전율" Binding="{Binding TurnoverRateText}" Width="70">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextRight}">
+                                            <Setter Property="Foreground" Value="White"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+
+                <Border Grid.Row="2" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="4" Padding="15">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
+                            <TextBlock Text="※ 차트" Style="{StaticResource SectionHeader}" Margin="0"/>
+                            <TextBlock x:Name="TxtChartTitle" Text=" 차트 로딩 중..." Foreground="{StaticResource Highlight}" FontSize="14" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                            <TextBlock Text=" ■ 5" Foreground="DeepPink" Margin="15,0,0,0" VerticalAlignment="Center" FontWeight="Bold" FontSize="12"/>
+                            <TextBlock Text=" ■ 10" Foreground="DeepSkyBlue" Margin="5,0,0,0" VerticalAlignment="Center" FontWeight="Bold" FontSize="12"/>
+                            <TextBlock Text=" ■ 20" Foreground="Gold" Margin="5,0,0,0" VerticalAlignment="Center" FontWeight="Bold" FontSize="12"/>
+                            <TextBlock Text=" ■ 60" Foreground="LimeGreen" Margin="5,0,0,0" VerticalAlignment="Center" FontWeight="Bold" FontSize="12"/>
+                            <TextBlock Text=" ■ 200" Foreground="#F97316" Margin="5,0,0,0" VerticalAlignment="Center" FontWeight="Bold" FontSize="12"/>
+                            <TextBlock Text=" ■ 480" Foreground="#E5E7EB" Margin="5,0,0,0" VerticalAlignment="Center" FontWeight="Bold" FontSize="12"/>
+                            <Button x:Name="BtnChartDaily" Content="일봉" Width="56" Height="26" Margin="16,0,0,0" Click="BtnChartDaily_Click" Background="#3a3e4a" Foreground="White" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" FontWeight="Bold" Cursor="Hand"/>
+                            <Button x:Name="BtnChartFiveMinute" Content="5분" Width="56" Height="26" Margin="6,0,0,0" Click="BtnChartFiveMinute_Click" Background="#3a3e4a" Foreground="White" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" FontWeight="Bold" Cursor="Hand"/>
+                            <Button x:Name="BtnChartTenMinute" Content="10분" Width="56" Height="26" Margin="6,0,0,0" Click="BtnChartTenMinute_Click" Background="#3a3e4a" Foreground="White" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" FontWeight="Bold" Cursor="Hand"/>
+                            <Button x:Name="BtnChartThirtyMinute" Content="30분" Width="56" Height="26" Margin="6,0,0,0" Click="BtnChartThirtyMinute_Click" Background="#3a3e4a" Foreground="White" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" FontWeight="Bold" Cursor="Hand"/>
+                        </StackPanel>
+
+                        <Border DockPanel.Dock="Bottom" BorderThickness="0,1,0,0" BorderBrush="{StaticResource BorderColor}" Margin="0,15,0,0" Padding="0,12,0,0">
+                            <UniformGrid Columns="4">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Text="현재가: " Foreground="#9CA3AF" FontSize="13" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="TxtChartFooterPrice" Text="---" Foreground="White" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Text="거래량: " Foreground="#9CA3AF" FontSize="13" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="TxtChartFooterVolume" Text="---" Foreground="White" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Text="거래대금: " Foreground="#9CA3AF" FontSize="13" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="TxtChartFooterValue" Text="---" Foreground="White" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Text="회전율: " Foreground="#9CA3AF" FontSize="13" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="TxtChartFooterTurnover" Text="---" Foreground="White" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </UniformGrid>
+                        </Border>
+
+                        <Canvas x:Name="ChartCanvas" SizeChanged="ChartCanvas_SizeChanged" ClipToBounds="True" Background="#1A1A1A"/>
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <Grid Grid.Column="1" Margin="0,0,10,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="400"/>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,10">
+                    <DockPanel>
+                        <TextBlock Text="📋 실시간 잔고 및 봇 관리 현황 (SL)" Style="{StaticResource SectionHeader}" DockPanel.Dock="Top"/>
+                        <DataGrid x:Name="GridBalance" Style="{StaticResource ModernGrid}" AutoGenerateColumns="False" SelectionChanged="OnStockSelected">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="종목명" Binding="{Binding Name}" Width="*" ElementStyle="{StaticResource GridCellTextLeft}"/>
+                                <DataGridTextColumn Header="매수가" Binding="{Binding BuyPrice, StringFormat={}{0:N0}}" Width="90" ElementStyle="{StaticResource GridCellTextRight}"/>
+                                <DataGridTextColumn Header="보유수량" Binding="{Binding VolumeText}" Width="80">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextRight}">
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="현재가" Binding="{Binding CurrentPrice, StringFormat={}{0:N0}}" Width="100">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextRight}">
+                                            <Setter Property="Foreground" Value="{Binding PriceColor}"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="손익률" Binding="{Binding ProfitRateText}" Width="100">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextRight}">
+                                            <Setter Property="Foreground" Value="{Binding ProfitColor}"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="손절가" Binding="{Binding StopLossPrice, StringFormat={}{0:N0}}" Width="100">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextRight}">
+                                            <Setter Property="Foreground" Value="{StaticResource SoftRed}"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+
+                <Border Grid.Row="1" Background="#1A1A1A" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="4" Padding="12">
+                    <DockPanel>
+                        <TextBlock Text="📑 시스템 실시간 로그" DockPanel.Dock="Top" Foreground="#9CA3AF" FontWeight="Bold" FontSize="14" Margin="5,0,0,8"/>
+                        <RichTextBox x:Name="TxtLog"
+                                     IsReadOnly="True"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="White"
+                                     FontFamily="Consolas"
+                                     FontSize="14"
+                                     Padding="0"
+                                     Focusable="True"
+                                     VerticalScrollBarVisibility="Hidden"
+                                     HorizontalScrollBarVisibility="Hidden">
+                            <FlowDocument PagePadding="0" Background="Transparent">
+                                <Paragraph x:Name="LogParagraph" LineHeight="20" Margin="0"/>
+                            </FlowDocument>
+                        </RichTextBox>
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <Grid Grid.Column="2">
+                <Border Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="4" Padding="10">
+                    <DockPanel>
+                        <TextBlock Text="🏆 키움 0198 실시간 종목조회순위 TOP 20 (1분)" Style="{StaticResource SectionHeader}" DockPanel.Dock="Top"/>
+                        <DataGrid x:Name="GridRank" Style="{StaticResource ModernGrid}" AutoGenerateColumns="False" SelectionChanged="OnStockSelected">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="순위" Binding="{Binding Rank}" Width="55">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextCenter}">
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="종목명" Binding="{Binding Name}" Width="*" ElementStyle="{StaticResource GridCellTextLeft}"/>
+                                <DataGridTextColumn Header="현재가" Binding="{Binding CurrentPrice, StringFormat={}{0:N0}}" Width="90">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextRight}">
+                                            <Setter Property="Foreground" Value="{Binding PriceColor}"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="순위변동" Binding="{Binding VolumeText}" Width="80">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextCenter}">
+                                            <Setter Property="Foreground" Value="{StaticResource BlueGrey}"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="등락률" Binding="{Binding ChangeRateText}" Width="75">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextRight}">
+                                            <Setter Property="Foreground" Value="{Binding ProfitColor}"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
