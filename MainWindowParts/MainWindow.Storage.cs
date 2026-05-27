@@ -77,6 +77,7 @@ namespace KHStrategyLab
                         if (normalized.LastPrice > 0)
                             old.LastPrice = normalized.LastPrice;
                         MergeStrategyCandidateMarketTag(old, normalized);
+                        MergeStrategyCandidateStockInfo(old, normalized);
                     }
                 }
 
@@ -113,7 +114,7 @@ namespace KHStrategyLab
                         CurrentPrice = candidate.LastPrice,
                         VolumeText = $"조건00추적/{marketText}",
                         TradingValueText = $"T+{GetStrategyCandidateTrackingDay(candidate, now)} / 6거래일보관",
-                        TurnoverRateText = marketText == "PENDING" ? "시장확인중" : $"{marketText}전략"
+                        TurnoverRateText = ResolveStrategyCandidateTurnoverText(candidate)
                     });
                 }
 
@@ -153,6 +154,7 @@ namespace KHStrategyLab
                             if (IsUsableResolvedName(latest.Name, latest.Code)) keep.Name = latest.Name;
                             keep.Sources = "조건00";
                             MergeStrategyCandidateMarketTag(keep, latest);
+                            MergeStrategyCandidateStockInfo(keep, latest);
                             EnsureStrategyCandidateMarketDefaults(keep);
                             return keep;
                         });

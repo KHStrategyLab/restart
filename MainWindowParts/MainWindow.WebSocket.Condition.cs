@@ -753,8 +753,7 @@ namespace KHStrategyLab
                     if (ShouldUseConditionTrackingVolumePlaceholder(row.VolumeText))
                         row.VolumeText = isNxt ? "조건00추적/NXT" : "조건00추적/KRX";
 
-                    if (string.IsNullOrWhiteSpace(row.TurnoverRateText) || row.TurnoverRateText == "-" || row.TurnoverRateText == "복원")
-                        row.TurnoverRateText = isNxt ? "NXT전략" : "KRX전략";
+                    if (IsStrategyMarketPlaceholderTurnoverText(row.TurnoverRateText)) row.TurnoverRateText = ResolveStrategyCandidateTurnoverText(candidate);
                 }
 
                 SaveWatchCandidates();
@@ -893,7 +892,7 @@ namespace KHStrategyLab
                     if (row != null)
                     {
                         row.VolumeText = "조건00추적/시장대기";
-                        row.TurnoverRateText = "시장확인중";
+                        row.TurnoverRateText = "-";
                         row.Ma5Text = "-";
                         row.Ma20Text = "-";
                         row.Ma60Text = "-";
